@@ -1,10 +1,26 @@
-import { Character } from "../database/models/Character";
-import { characterService } from "../services/characterService";
-import { redisClient } from "../config/redis";
+import { characterService } from "../../services/CharacterService";
+import { Character } from "../../database/models/Character";
 
-// Mock de las dependencias
-jest.mock("../database/models/Character");
-jest.mock("../config/redis");
+// Configurar mocks
+
+// Mock de Comment
+jest.mock("../../database/models/Comment", () => ({
+  Comment: {
+    init: jest.fn(),
+    belongsTo: jest.fn(),
+  },
+}));
+
+jest.mock("../../database/models/Character");
+jest.mock("../../config/redis", () => ({
+  redisClient: {
+    get: jest.fn(),
+    set: jest.fn(),
+    setEx: jest.fn(),
+    del: jest.fn(),
+    keys: jest.fn(),
+  },
+}));
 
 describe("CharacterService", () => {
   beforeEach(() => {

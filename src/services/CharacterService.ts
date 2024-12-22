@@ -128,7 +128,7 @@ export class CharacterService {
 
   private async invalidateCharacterListCache() {
     const keys = await redisClient.keys("characters:*");
-    if (keys.length > 0) {
+    if (keys?.length > 0) {
       await redisClient.del(keys);
     }
   }

@@ -1,6 +1,6 @@
-import { resolvers } from "../graphql/resolvers";
-import { characterService } from "../services/characterService";
-import { redisClient } from "../config/redis";
+import { characterService } from "../../services/CharacterService";
+import { resolvers } from "../../graphql/resolvers";
+import { redisClient } from "../../config/redis";
 
 jest.mock("../services/characterService");
 jest.mock("../config/redis");

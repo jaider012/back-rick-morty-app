@@ -3,7 +3,11 @@ import { redisClient } from "../config/redis";
 import { characterService } from "../services/CharacterService";
 import { CharacterFilter, SortInput } from "../types/graphql";
 
-export const resolvers: IResolvers = {
+interface ResolverContext {
+  req: any;
+}
+
+export const resolvers: IResolvers<any, ResolverContext> = {
   Query: {
     characters: async (_, { page = 1, filter, sort }) => {
       try {
