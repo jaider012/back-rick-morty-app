@@ -7,23 +7,12 @@ export const resolvers: IResolvers = {
   Query: {
     characters: async (_, { page = 1, filter, sort }) => {
       try {
-        const cacheKey = `characters:${JSON.stringify({ page, filter, sort })}`;
-
-        // Check cache first
-        const cached = await redisClient.get(cacheKey);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
         // Get data from service
         const result = await characterService.findAll(
           page,
           filter as CharacterFilter,
           sort as SortInput
         );
-
-        // Cache the result
-        await redisClient.setEx(cacheKey, 3600, JSON.stringify(result));
 
         return result;
       } catch (error) {
