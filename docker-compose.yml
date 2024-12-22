@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: rick_morty_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rick_morty_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - rick_morty_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rick_morty_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - rick_morty_network
+
+networks:
+  rick_morty_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
