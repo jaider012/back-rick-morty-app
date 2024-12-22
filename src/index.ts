@@ -1,13 +1,16 @@
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
-import cors from "cors";
 import { typeDefs } from "./graphql/typeDefs";
 import { resolvers } from "./graphql/resolvers";
 import { sequelize } from "./config/database";
 import { redisClient } from "./config/redis";
 import { loggingMiddleware } from "./middleware/logging";
+import cors from "cors";
+import dotenv from "dotenv";
 
-const startServer = async () => {
+dotenv.config();
+
+async function startServer() {
   const app = express();
 
   app.use(cors());
@@ -25,10 +28,10 @@ const startServer = async () => {
 
   try {
     await redisClient.connect();
-    console.log("Redis connected successfully");
+    console.log("✅ Redis connected successfully");
 
     await sequelize.authenticate();
-    console.log("Database connected successfully");
+    console.log("✅ Database connected successfully");
 
     const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {
@@ -40,6 +43,6 @@ const startServer = async () => {
     console.error("Error starting server:", error);
     process.exit(1);
   }
-};
+}
 
-startServer();
+startServer().catch(console.error);
