@@ -11,10 +11,12 @@ export const typeDefs = gql`
     origin: String!
     location: String!
     image: String!
-    created: String!
+    apiId: Int!
     favorite: Boolean!
     comments: [Comment]!
     deleted: Boolean!
+    createdAt: String!
+    updatedAt: String!
   }
 
   type Comment {
@@ -22,6 +24,8 @@ export const typeDefs = gql`
     characterId: ID!
     content: String!
     created: String!
+    createdAt: String!
+    updatedAt: String!
   }
 
   type Query {
@@ -51,6 +55,8 @@ export const typeDefs = gql`
     species: String
     type: String
     gender: String
+    origin: String
+    favorite: Boolean
   }
 
   input SortInput {

@@ -1,8 +1,9 @@
 import { Op } from "sequelize";
 import { Character } from "../database/models/Character";
 import { redisClient } from "../config/redis";
-import { CharacterFilter, SortInput } from "../types/graphql.ts";
+import { CharacterFilter, SortInput } from "../types/graphql";
 import { measureExecutionTime } from "../decorators/performance";
+import { Comment } from "../database/models/Comment";
 
 export class CharacterService {
   private static CACHE_TTL = 3600; // 1 hour in seconds
