@@ -11,6 +11,11 @@ export class Character extends Model {
   public origin!: string;
   public location!: string;
   public image!: string;
+  public apiId!: number;
+  public favorite!: boolean;
+  public deleted!: boolean;
+  public createdAt!: Date;
+  public updatedAt!: Date;
 }
 
 Character.init(
@@ -50,6 +55,18 @@ Character.init(
     image: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    apiId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    favorite: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    deleted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
   },
   {
