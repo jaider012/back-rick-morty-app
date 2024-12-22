@@ -1,8 +1,8 @@
-import { Resolvers } from "../types/graphql";
+import { CustomResolvers } from "../types/graphql";
 import { characterService } from "../services/CharacterService";
 import { redisClient } from "../config/redis";
 
-export const resolvers: Resolvers = {
+export const resolvers: CustomResolvers = {
   Query: {
     characters: async (_, { page = 1, filter, sort }, context) => {
       try {

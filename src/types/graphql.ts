@@ -1,4 +1,6 @@
 // src/types/graphql.ts
+
+import { IResolvers } from "@graphql-tools/utils";
 export interface CharacterFilter {
   name?: string;
   status?: string;
@@ -53,7 +55,7 @@ export interface ResolverContext {
   req: any;
 }
 
-export interface Resolvers {
+export interface CustomResolvers extends IResolvers {
   Query: {
     characters: (
       parent: any,
