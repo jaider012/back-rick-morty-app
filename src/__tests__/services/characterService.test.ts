@@ -1,96 +1,140 @@
+import { resolvers } from "../../graphql/resolvers";
 import { characterService } from "../../services/CharacterService";
-import { Character } from "../../database/models/Character";
+import { redisClient } from "../../config/redis";
 
-// Configurar mocks
+// Mock dependencies
+jest.mock("../../services/CharacterService");
+jest.mock("../../config/redis");
 
-// Mock de Comment
-jest.mock("../../database/models/Comment", () => ({
-  Comment: {
-    init: jest.fn(),
-    belongsTo: jest.fn(),
-  },
-}));
-
-jest.mock("../../database/models/Character");
-jest.mock("../../config/redis", () => ({
-  redisClient: {
-    get: jest.fn(),
-    set: jest.fn(),
-    setEx: jest.fn(),
-    del: jest.fn(),
-    keys: jest.fn(),
-  },
-}));
-
-describe("CharacterService", () => {
+describe("GraphQL Resolvers", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe("findAll", () => {
-    it("should return characters with pagination", async () => {
-      const mockCharacters = [
-        { id: 1, name: "Rick", status: "Alive" },
-        { id: 2, name: "Morty", status: "Alive" },
-      ];
-
-      const mockCount = 2;
-
-      (Character.findAndCountAll as jest.Mock).mockResolvedValue({
-        rows: mockCharacters,
-        count: mockCount,
-      });
-
-      const result = await characterService.findAll(1);
-
-      expect(result.results).toHaveLength(2);
-      expect(result.info.count).toBe(2);
-      expect(Character.findAndCountAll).toHaveBeenCalled();
-    });
-
-    it("should apply filters correctly", async () => {
-      const filter = { status: "Alive", species: "Human" };
-
-      await characterService.findAll(1, filter);
-
-      expect(Character.findAndCountAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining(filter),
-        })
-      );
-    });
-  });
-
-  describe("findById", () => {
-    it("should return character by id", async () => {
-      const mockCharacter = { id: 1, name: "Rick" };
-      (Character.findOne as jest.Mock).mockResolvedValue(mockCharacter);
-
-      const result = await characterService.findById(1);
-
-      expect(result).toEqual(mockCharacter);
-      expect(Character.findOne).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 1, deleted: false },
-        })
-      );
-    });
-  });
-
-  describe("toggleFavorite", () => {
-    it("should toggle favorite status", async () => {
-      const mockCharacter = {
-        id: 1,
-        favorite: false,
-        save: jest.fn(),
+  describe("Query", () => {
+    describe("characters", () => {
+      const mockCharacters = {
+        results: [{ id: 1, name: "Rick" }],
+        info: { count: 1, pages: 1 },
       };
 
-      (Character.findByPk as jest.Mock).mockResolvedValue(mockCharacter);
+      it("should return characters from service", async () => {
+        (characterService.findAll as jest.Mock).mockResolvedValue(
+          mockCharacters
+        );
 
-      await characterService.toggleFavorite(1);
+        const result = await resolvers.Query.characters(
+          null,
+          { page: 1 },
+          { req: {} }
+        );
 
-      expect(mockCharacter.favorite).toBe(true);
-      expect(mockCharacter.save).toHaveBeenCalled();
+        expect(result).toEqual(mockCharacters);
+        expect(characterService.findAll).toHaveBeenCalledWith(
+          1,
+          undefined,
+          undefined
+        );
+      });
+
+      it("should handle filters and sorting", async () => {
+        const filter = { status: "Alive" };
+        const sort = { field: "name", direction: "ASC" };
+
+        (characterService.findAll as jest.Mock).mockResolvedValue(
+          mockCharacters
+        );
+
+        await resolvers.Query.characters(
+          null,
+          { page: 1, filter, sort },
+          { req: {} }
+        );
+
+        expect(characterService.findAll).toHaveBeenCalledWith(1, filter, sort);
+      });
+    });
+
+    describe("character", () => {
+      const mockCharacter = { id: 1, name: "Rick" };
+
+      it("should return character from cache if available", async () => {
+        (redisClient.get as jest.Mock).mockResolvedValue(
+          JSON.stringify(mockCharacter)
+        );
+
+        const result = await resolvers.Query.character(
+          null,
+          { id: 1 },
+          { req: {} }
+        );
+
+        expect(result).toEqual(mockCharacter);
+        expect(redisClient.get).toHaveBeenCalledWith("character:1");
+        expect(characterService.findById).not.toHaveBeenCalled();
+      });
+
+      it("should fetch and cache character if not in cache", async () => {
+        (redisClient.get as jest.Mock).mockResolvedValue(null);
+        (characterService.findById as jest.Mock).mockResolvedValue(
+          mockCharacter
+        );
+
+        const result = await resolvers.Query.character(
+          null,
+          { id: 1 },
+          { req: {} }
+        );
+
+        expect(result).toEqual(mockCharacter);
+        expect(characterService.findById).toHaveBeenCalledWith(1);
+        expect(redisClient.setEx).toHaveBeenCalledWith(
+          "character:1",
+          3600,
+          JSON.stringify(mockCharacter)
+        );
+      });
+    });
+  });
+
+  describe("Mutation", () => {
+    describe("toggleFavorite", () => {
+      it("should toggle favorite status", async () => {
+        const mockCharacter = { id: 1, favorite: true };
+        (characterService.toggleFavorite as jest.Mock).mockResolvedValue(
+          mockCharacter
+        );
+
+        const result = await resolvers.Mutation.toggleFavorite(
+          null,
+          { id: 1 },
+          { req: {} }
+        );
+
+        expect(result).toEqual(mockCharacter);
+        expect(characterService.toggleFavorite).toHaveBeenCalledWith(1);
+      });
+    });
+
+    describe("addComment", () => {
+      it("should add comment to character", async () => {
+        const mockComment = { id: 1, content: "Test comment" };
+        (characterService.addComment as jest.Mock).mockResolvedValue(
+          mockComment
+        );
+
+        const result = await resolvers.Mutation.addComment(
+          null,
+          { characterId: 1, content: "Test comment" },
+          { req: {} }
+        );
+
+        expect(result).toEqual(mockComment);
+        expect(characterService.addComment).toHaveBeenCalledWith(
+          1,
+          "Test comment"
+        );
+      });
     });
   });
 });

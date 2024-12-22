@@ -1,27 +1,14 @@
-import { IResolvers } from "@graphql-tools/utils";
-import { redisClient } from "../config/redis";
+import { Resolvers } from "../types/graphql";
 import { characterService } from "../services/CharacterService";
-import { CharacterFilter, SortInput } from "../types/graphql";
+import { redisClient } from "../config/redis";
 
-interface ResolverContext {
-  req: any;
-}
-
-export const resolvers: IResolvers<any, ResolverContext> = {
+export const resolvers: Resolvers = {
   Query: {
-    characters: async (_, { page = 1, filter, sort }) => {
+    characters: async (_, { page = 1, filter, sort }, context) => {
       try {
-        // Get data from service
-        const result = await characterService.findAll(
-          page,
-          filter as CharacterFilter,
-          sort as SortInput
-        );
-
+        const result = await characterService.findAll(page, filter, sort);
         return result;
       } catch (error) {
-        console.error("Error in characters resolver:", error);
-        // En lugar de retornar null, retornamos un resultado vacío válido
         return {
           results: [],
           info: {
@@ -34,25 +21,21 @@ export const resolvers: IResolvers<any, ResolverContext> = {
       }
     },
 
-    character: async (_, { id }) => {
+    character: async (_, { id }, context) => {
       try {
         const cacheKey = `character:${id}`;
-
-        // Check cache
         const cached = await redisClient.get(cacheKey);
+
         if (cached) {
           return JSON.parse(cached);
         }
 
-        const character = await characterService.findById(parseInt(id));
-
+        const character = await characterService.findById(id);
         if (!character) {
           throw new Error("Character not found");
         }
 
-        // Cache the result
         await redisClient.setEx(cacheKey, 3600, JSON.stringify(character));
-
         return character;
       } catch (error) {
         console.error("Error in character resolver:", error);
@@ -62,63 +45,27 @@ export const resolvers: IResolvers<any, ResolverContext> = {
   },
 
   Mutation: {
-    toggleFavorite: async (_, { id }) => {
+    toggleFavorite: async (_, { id }, context) => {
       try {
-        const result = await characterService.toggleFavorite(parseInt(id));
-
-        // Limpiar caché del personaje específico
-        await redisClient.del(`character:${id}`);
-
-        // Limpiar todas las cachés de listas de personajes
-        const characterListKeys = await redisClient.keys("characters:*");
-        if (characterListKeys.length > 0) {
-          await redisClient.del(characterListKeys);
-        }
-
-        return result;
+        return await characterService.toggleFavorite(id);
       } catch (error) {
         console.error("Error in toggleFavorite resolver:", error);
         throw error;
       }
     },
 
-    addComment: async (_, { characterId, content }) => {
+    addComment: async (_, { characterId, content }, context) => {
       try {
-        const result = await characterService.addComment(
-          parseInt(characterId),
-          content
-        );
-
-        // Limpiar caché del personaje específico
-        await redisClient.del(`character:${characterId}`);
-
-        // Limpiar todas las cachés de listas de personajes
-        const characterListKeys = await redisClient.keys("characters:*");
-        if (characterListKeys.length > 0) {
-          await redisClient.del(characterListKeys);
-        }
-
-        return result;
+        return await characterService.addComment(characterId, content);
       } catch (error) {
         console.error("Error in addComment resolver:", error);
         throw error;
       }
     },
 
-    softDeleteCharacter: async (_, { id }) => {
+    softDeleteCharacter: async (_, { id }, context) => {
       try {
-        const result = await characterService.softDelete(parseInt(id));
-
-        // Limpiar caché del personaje específico
-        await redisClient.del(`character:${id}`);
-
-        // Limpiar todas las cachés de listas de personajes
-        const characterListKeys = await redisClient.keys("characters:*");
-        if (characterListKeys.length > 0) {
-          await redisClient.del(characterListKeys);
-        }
-
-        return result;
+        return await characterService.softDelete(id);
       } catch (error) {
         console.error("Error in softDeleteCharacter resolver:", error);
         throw error;
@@ -127,11 +74,14 @@ export const resolvers: IResolvers<any, ResolverContext> = {
   },
 
   Character: {
-    // Resolver para cargar los comentarios de un personaje
     comments: async (parent) => {
       try {
-        const comments = await parent.getComments();
-        return comments;
+        if (parent.getComments) {
+          return await parent.getComments();
+        } else {
+          console.error("getComments is undefined for parent:", parent);
+          return [];
+        }
       } catch (error) {
         console.error("Error loading comments:", error);
         return [];

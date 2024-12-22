@@ -2,8 +2,9 @@ import { characterService } from "../../services/CharacterService";
 import { resolvers } from "../../graphql/resolvers";
 import { redisClient } from "../../config/redis";
 
-jest.mock("../services/characterService");
-jest.mock("../config/redis");
+// Mock dependencies
+jest.mock("../../services/CharacterService");
+jest.mock("../../config/redis");
 
 describe("GraphQL Resolvers", () => {
   beforeEach(() => {
@@ -12,58 +13,144 @@ describe("GraphQL Resolvers", () => {
 
   describe("Query", () => {
     describe("characters", () => {
-      it("should return characters from cache if available", async () => {
-        const cachedData = {
-          results: [{ id: 1, name: "Rick" }],
-          info: { count: 1, pages: 1 },
-        };
+      const mockCharacters = {
+        results: [
+          {
+            id: 1,
+            name: "Rick",
+            status: "Alive",
+            species: "Human",
+            type: "",
+            gender: "Male",
+            origin: "Earth",
+            location: "Earth",
+            image: "rick.jpg",
+            favorite: false,
+            deleted: false,
+          },
+        ],
+        info: {
+          count: 1,
+          pages: 1,
+          next: null,
+          prev: null,
+        },
+      };
 
-        (redisClient.get as jest.Mock).mockResolvedValue(
-          JSON.stringify(cachedData)
-        );
-
-        const result = await resolvers.Query.characters({}, {}, {});
-
-        expect(result).toEqual(cachedData);
-        expect(redisClient.get).toHaveBeenCalled();
-        expect(characterService.findAll).not.toHaveBeenCalled();
-      });
-
-      it("should fetch and cache characters if not in cache", async () => {
-        const characterData = {
-          results: [{ id: 1, name: "Rick" }],
-          info: { count: 1, pages: 1 },
-        };
-
-        (redisClient.get as jest.Mock).mockResolvedValue(null);
+      it("should return all characters successfully", async () => {
         (characterService.findAll as jest.Mock).mockResolvedValue(
-          characterData
+          mockCharacters
         );
 
-        const result = await resolvers.Query.characters({}, {}, {});
+        const result = await resolvers.Query.characters(
+          null,
+          { page: 1 },
+          { req: {} }
+        );
 
-        expect(result).toEqual(characterData);
-        expect(characterService.findAll).toHaveBeenCalled();
-        expect(redisClient.setEx).toHaveBeenCalled();
+        expect(result).toEqual(mockCharacters);
+        expect(characterService.findAll).toHaveBeenCalledWith(
+          1,
+          undefined,
+          undefined
+        );
       });
-    });
-  });
 
-  describe("Mutation", () => {
-    it("should toggle favorite status", async () => {
-      const mockCharacter = { id: 1, favorite: true };
-      (characterService.toggleFavorite as jest.Mock).mockResolvedValue(
-        mockCharacter
-      );
+      it("should handle filters correctly", async () => {
+        const filter = {
+          status: "Alive",
+          species: "Human",
+          gender: "Male",
+        };
 
-      const result = await resolvers.Mutation.toggleFavorite(
-        {},
-        { id: "1" },
-        {}
-      );
+        (characterService.findAll as jest.Mock).mockResolvedValue(
+          mockCharacters
+        );
 
-      expect(result).toEqual(mockCharacter);
-      expect(characterService.toggleFavorite).toHaveBeenCalledWith(1);
+        await resolvers.Query.characters(
+          null,
+          { page: 1, filter },
+          { req: {} }
+        );
+
+        expect(characterService.findAll).toHaveBeenCalledWith(
+          1,
+          filter,
+          undefined
+        );
+      });
+
+      it("should handle sorting correctly", async () => {
+        const sort = {
+          field: "name",
+          direction: "ASC",
+        };
+
+        (characterService.findAll as jest.Mock).mockResolvedValue(
+          mockCharacters
+        );
+
+        await resolvers.Query.characters(null, { page: 1, sort }, { req: {} });
+
+        expect(characterService.findAll).toHaveBeenCalledWith(
+          1,
+          undefined,
+          sort
+        );
+      });
+
+      it("should handle both filters and sorting together", async () => {
+        const filter = { status: "Alive" };
+        const sort = { field: "name", direction: "DESC" };
+
+        (characterService.findAll as jest.Mock).mockResolvedValue(
+          mockCharacters
+        );
+
+        await resolvers.Query.characters(
+          null,
+          { page: 1, filter, sort },
+          { req: {} }
+        );
+
+        expect(characterService.findAll).toHaveBeenCalledWith(1, filter, sort);
+      });
+
+      it("should handle errors gracefully", async () => {
+        (characterService.findAll as jest.Mock).mockRejectedValue(
+          new Error("Database error")
+        );
+
+        const result = await resolvers.Query.characters(
+          null,
+          { page: 1 },
+          { req: {} }
+        );
+
+        expect(result).toEqual({
+          results: [],
+          info: {
+            count: 0,
+            pages: 0,
+            next: null,
+            prev: null,
+          },
+        });
+      });
+
+      it("should use default page 1 when no page is provided", async () => {
+        (characterService.findAll as jest.Mock).mockResolvedValue(
+          mockCharacters
+        );
+
+        await resolvers.Query.characters(null, {}, { req: {} });
+
+        expect(characterService.findAll).toHaveBeenCalledWith(
+          1,
+          undefined,
+          undefined
+        );
+      });
     });
   });
 });
