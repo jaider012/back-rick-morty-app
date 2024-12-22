@@ -1,0 +1,201 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Rick and Morty API",
+    "description": "API GraphQL para gestionar personajes de Rick and Morty.\nIncluye funcionalidades de búsqueda, filtrado, favoritos y comentarios.",
+    "version": "1.0.0",
+    "contact": {
+      "email": "your-email@example.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Servidor de desarrollo"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Queries",
+      "description": "Operaciones de consulta"
+    },
+    {
+      "name": "Mutations",
+      "description": "Operaciones de modificación"
+    }
+  ],
+  "paths": {
+    "/graphql": {
+      "post": {
+        "summary": "GraphQL Endpoint",
+        "description": "Endpoint principal para todas las operaciones GraphQL",
+        "tags": [
+          "Queries",
+          "Mutations"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "Query o mutación GraphQL"
+                  },
+                  "variables": {
+                    "type": "object",
+                    "description": "Variables para la query (opcional)"
+                  }
+                }
+              },
+              "examples": {
+                "getAllCharacters": {
+                  "summary": "Obtener todos los personajes",
+                  "value": {
+                    "query": "query {\n  characters {\n    results {\n      id\n      name\n      status\n      species\n    }\n    info {\n      count\n      pages\n    }\n  }\n}"
+                  }
+                },
+                "getFilteredCharacters": {
+                  "summary": "Obtener personajes filtrados",
+                  "value": {
+                    "query": "query {\n  characters(\n    filter: { status: \"Alive\", species: \"Human\" }\n    sort: { field: \"name\", direction: \"asc\" }\n  ) {\n    results {\n      id\n      name\n      status\n    }\n  }\n}"
+                  }
+                },
+                "addComment": {
+                  "summary": "Agregar comentario",
+                  "value": {
+                    "query": "mutation {\n  addComment(\n    characterId: \"1\"\n    content: \"¡Excelente personaje!\"\n  ) {\n    id\n    content\n    created\n  }\n}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta exitosa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Character": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "species",
+          "gender",
+          "origin",
+          "location",
+          "image",
+          "apiId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID único del personaje"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre del personaje"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Alive", "Dead", "unknown"],
+            "description": "Estado actual del personaje"
+          },
+          "species": {
+            "type": "string",
+            "description": "Especie del personaje"
+          },
+          "type": {
+            "type": "string",
+            "description": "Tipo específico del personaje"
+          },
+          "gender": {
+            "type": "string",
+            "enum": ["Female", "Male", "Genderless", "unknown"],
+            "description": "Género del personaje"
+          },
+          "origin": {
+            "type": "string",
+            "description": "Lugar de origen del personaje"
+          },
+          "location": {
+            "type": "string",
+            "description": "Ubicación actual del personaje"
+          },
+          "image": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL de la imagen del personaje"
+          },
+          "apiId": {
+            "type": "integer",
+            "description": "ID del personaje en la API original"
+          },
+          "favorite": {
+            "type": "boolean",
+            "description": "Indica si el personaje está marcado como favorito"
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "Indica si el personaje ha sido eliminado (soft delete)"
+          }
+        }
+      },
+      "Comment": {
+        "type": "object",
+        "required": [
+          "id",
+          "characterId",
+          "content",
+          "created"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID único del comentario"
+          },
+          "characterId": {
+            "type": "string",
+            "description": "ID del personaje al que pertenece el comentario"
+          },
+          "content": {
+            "type": "string",
+            "description": "Contenido del comentario"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha y hora de creación del comentario"
+          }
+        }
+      }
+    }
+  }
+}
