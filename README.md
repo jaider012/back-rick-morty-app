@@ -23,18 +23,12 @@ Backend service for Rick and Morty character management built with Express, Grap
 
 ## Development Setup
 
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd rick-morty-backend
-```
-
-2. Install dependencies:
+1. Install dependencies:
 ```bash
 yarn install
 ```
 
-3. Set up environment variables:
+2. Set up environment variables:
 Create a `.env` file in the root directory:
 ```env
 # Database
