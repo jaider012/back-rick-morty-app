@@ -56,7 +56,7 @@ export const typeDefs = gql`
     type: String
     gender: String
     origin: String
-    favorite: Boolean
+    favoriteFilter: Boolean
   }
 
   input SortInput {
