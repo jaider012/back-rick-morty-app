@@ -7,6 +7,7 @@ export interface CharacterFilter {
   species?: string;
   type?: string;
   gender?: string;
+  favoriteFilter?: "Starred" | "All" | "Others";
 }
 
 export interface SortInput {

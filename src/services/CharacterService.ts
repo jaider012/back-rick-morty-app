@@ -31,7 +31,23 @@ export class CharacterService {
       if (filter.gender) {
         where.gender = filter.gender;
       }
+
+      // Nuevo filtro para favoritos
+      if (filter.favoriteFilter) {
+        switch (filter.favoriteFilter) {
+          case "Starred":
+            where.favorite = true;
+            break;
+          case "Others":
+            where.favorite = false;
+            break;
+          case "All":
+          default:
+            break;
+        }
+      }
     }
+
     // Add non-deleted condition
     where.deleted = false;
 
