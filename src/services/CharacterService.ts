@@ -32,7 +32,10 @@ export class CharacterService {
         where.gender = filter.gender;
       }
 
-      if (filter.favoriteFilter) {
+      if (
+        filter.favoriteFilter !== undefined &&
+        filter.favoriteFilter !== null
+      ) {
         where.favorite = filter.favoriteFilter;
       }
     }
