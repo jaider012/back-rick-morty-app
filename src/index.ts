@@ -17,7 +17,7 @@ async function startServer() {
 
   app.use(cors());
   app.use(express.json());
-  app.use(loggingMiddleware);
+  // app.use(loggingMiddleware);
 
   // Configuración de Swagger
   const swaggerDocument = require("./docs/swagger.json");
