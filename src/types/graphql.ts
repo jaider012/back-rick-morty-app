@@ -68,6 +68,11 @@ export interface CustomResolvers extends IResolvers {
       args: { id: number },
       context: ResolverContext
     ) => Promise<Character | null>;
+    searchCharactersByName: (
+      parent: any,
+      args: { name: string },
+      context: ResolverContext
+    ) => Promise<Character[]>;
   };
   Mutation: {
     toggleFavorite: (

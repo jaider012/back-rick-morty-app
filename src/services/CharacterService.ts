@@ -157,6 +157,16 @@ export class CharacterService {
       JSON.stringify(data)
     );
   }
+
+  @measureExecutionTime
+  async searchByName(name: string) {
+    return Character.findAll({
+      where: {
+        name: { [Op.iLike]: `%${name}%` },
+        deleted: false,
+      },
+    });
+  }
 }
 
 export const characterService = new CharacterService();

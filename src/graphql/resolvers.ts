@@ -42,6 +42,16 @@ export const resolvers: CustomResolvers = {
         throw error;
       }
     },
+
+    searchCharactersByName: async (_, { name }, context) => {
+      try {
+        const result = await characterService.searchByName(name);
+        return result;
+      } catch (error) {
+        console.error("Error in searchCharactersByName resolver:", error);
+        return [];
+      }
+    },
   },
 
   Mutation: {
